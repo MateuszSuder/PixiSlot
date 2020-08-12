@@ -18,7 +18,6 @@ app.loader
 app.loader.onProgress.add(showProgress);
 app.loader.onComplete.add(doneLoading)
 
-
 app.loader.load();
 
 function showProgress(e: { progress: any; }){
@@ -27,24 +26,23 @@ function showProgress(e: { progress: any; }){
 
 function doneLoading(){
   let container = new PIXI.Container();
-
-  for(let i=1; i<=7; i++){
+  for(let i=1; i<=3; i++){
     let sprite = PIXI.Sprite.from(app.loader.resources['symbol'+i].texture);
+    sprite.height = window.innerHeight/3
+    sprite.width = window.innerHeight/3
+
+    sprite.position.y = (window.innerHeight/3) * (i-1);
     container.addChild(sprite);
   }
-
+  
   app.stage.addChild(container);
   initalize();
 }
 
-
-
-
+function resize() {
+  app.renderer.resize(window.innerWidth, window.innerHeight);
+}
 
 window.addEventListener('resize', resize);
-
-function resize() {
-	app.renderer.resize(window.innerWidth, window.innerHeight);
-}
 
 resize();

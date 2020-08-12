@@ -24,11 +24,49 @@ function initalize() {
     class Spin {
         constructor(b, logs) {
             this.spinResult = []; //Symbols put in two dimensional array, so its easier to read slot-like [row][reel]
-            this.winningLines = []; //Number of line in array from slot.paylines
+            this.winningLines = []; //Index of winning line in array from slot.paylines. First index(0) = first line
             this.totalWin = 0;
+            this.drawSymbols = new Promise((resolve, reject) => {
+                for (let ro = 0; ro < slot.rows; ro++) {
+                    this.spinResult[ro] = [];
+                    for (let re = 0; re < slot.reels; re++) {
+                        let temp = randomInt(1, symbolsAmount);
+                        let res = symbolChances.numberToSymbol(temp);
+                        if (res != undefined) {
+                            this.spinResult[ro][re] = res;
+                        }
+                        else {
+                            reject(`Error drawing value res (${res}) is undefined`);
+                        }
+                    }
+                }
+                resolve('Drawing done');
+            });
+            this.checkLines = new Promise((resolve, reject) => {
+                for (let i = 0; i < slot.paylines.length; i++) { //Index of payline
+                    for (let j = 0; j < slot.paylines[i].length; j++) { //Index of actual field
+                    }
+                }
+            });
+            this.logs = () => {
+                let r = "";
+                for (let ro = 0; ro < slot.rows; ro++) {
+                    for (let re = 0; re < slot.reels; re++) {
+                        r += this.spinResult[ro][re].name + " ";
+                    }
+                    r += "\n";
+                }
+                console.log(r);
+                console.log(this.winningLines);
+            };
             this.bet = b;
-        }
-        drawSymbols() {
+            Promise.all([
+                this.drawSymbols,
+                this.checkLines
+            ]).then((messages) => {
+                console.log(messages);
+            });
+            this.logs();
         }
     }
     //Symbols declaration
@@ -41,7 +79,18 @@ function initalize() {
     const symbol7 = new SlotSymbol("symbol7", app.loader.resources["symbol7"].texture, [[3, 20], [4, 100], [5, 200]]);
     const symbolChances = {
         symbols: [symbol1, symbol2, symbol3, symbol4, symbol5, symbol6, symbol7],
-        chances: [200, 150, 150, 100, 90, 60, 50]
+        chances: [200, 150, 150, 100, 90, 60, 50],
+        numberToSymbol(nr) {
+            let temp = 1;
+            for (let i = 0; i < this.chances.length; i++) {
+                if (nr >= temp && nr < temp + this.chances[i]) {
+                    return this.symbols[i];
+                }
+                else {
+                    temp += this.chances[i];
+                }
+            }
+        }
     };
     function countSymbols() {
         let r = 0;
@@ -51,4 +100,5 @@ function initalize() {
         return r;
     }
     const symbolsAmount = countSymbols();
+    let s = new Spin(1, true);
 }

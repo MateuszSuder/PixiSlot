@@ -5,11 +5,11 @@ const slot = {
     //1 - 1 - 1 - 1 - 1
     //2 - 2 - 2 - 2 - 2
     paylines: [
-        [0,0,0,0,0],
-        [1,1,1,1,1],
-        [2,2,2,2,2],
-        [0,1,2,1,0],
-        [2,1,0,1,2],
+        [0, 0, 0, 0, 0],
+        [1, 1, 1, 1, 1],
+        [2, 2, 2, 2, 2],
+        [0, 1, 2, 1, 0],
+        [2, 1, 0, 1, 2],
     ],
 }
 
@@ -26,19 +26,59 @@ class SlotSymbol{
 
 function initalize(){
     class Spin{
-        spinResult: number[][] = []; //Symbols put in two dimensional array, so its easier to read slot-like [row][reel]
-        winningLines: number[] = []; //Number of line in array from slot.paylines
+        spinResult: SlotSymbol[][] = []; //Symbols put in two dimensional array, so its easier to read slot-like [row][reel]
+        winningLines: number[] = []; //Index of winning line in array from slot.paylines. First index(0) = first line
         bet: number;
         totalWin: number = 0;
     
         constructor(b: number, logs?: boolean){
             this.bet = b;
+
+            Promise.all([
+                this.drawSymbols,
+                this.checkLines
+            ]).then((messages) => {
+                console.log(messages)
+            })
+
+            this.logs();
         }
     
-        drawSymbols(){
-            
+        drawSymbols = new Promise((resolve, reject) => {
+            for(let ro = 0; ro < slot.rows; ro++){
+                this.spinResult[ro] = [];
+                for(let re = 0; re < slot.reels; re++){
+                    let temp = randomInt(1, symbolsAmount);
+                    let res = symbolChances.numberToSymbol(temp);
+                    if(res != undefined){
+                        this.spinResult[ro][re] = res;
+                    }else{
+                        reject(`Error drawing value res (${res}) is undefined`)
+                    }
+                }
+            }
+            resolve('Drawing done');
+        })
+
+        checkLines = new Promise((resolve, reject) => {
+            for(let i = 0; i < slot.paylines.length; i++){ //Index of payline
+                for(let j = 0; j < slot.paylines[i].length; j++){ //Index of actual field
+                    
+                }          
+            }
+        })
+
+        logs = () => {
+            let r = "";
+            for(let ro = 0; ro < slot.rows; ro++){
+                for(let re = 0; re < slot.reels; re++){
+                    r += this.spinResult[ro][re].name + " ";
+                }
+                r += "\n"
+            }
+            console.log(r);
+            console.log(this.winningLines)
         }
-    
     }
 
     //Symbols declaration
@@ -52,7 +92,19 @@ function initalize(){
 
     const symbolChances = { //Chances = number of each symbol in draw
         symbols:    [symbol1,    symbol2,    symbol3,    symbol4,    symbol5,    symbol6,    symbol7],
-        chances:    [200,        150,        150,        100,        90,         60,         50     ]
+        chances:    [200,        150,        150,        100,        90,         60,         50     ],
+
+        numberToSymbol(nr: number){
+            let temp: number = 1;
+
+            for(let i = 0; i < this.chances.length; i++){
+                if(nr >= temp && nr < temp + this.chances[i]){
+                    return this.symbols[i];
+                }else{
+                    temp += this.chances[i];
+                }
+            }
+        }
     }
 
     function countSymbols(): number{
@@ -65,5 +117,6 @@ function initalize(){
 
     const symbolsAmount = countSymbols();
 
+    let s = new Spin(1, true);
 }
 

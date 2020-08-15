@@ -25,19 +25,75 @@ function showProgress(e: { progress: any; }){
 }
 
 function doneLoading(){
-  let container = new PIXI.Container();
-  for(let i=1; i<=3; i++){
-    let sprite = PIXI.Sprite.from(app.loader.resources['symbol'+i].texture);
-    sprite.height = window.innerHeight/3
-    sprite.width = window.innerHeight/3
+  
+  initalizeTextures();
+  let s = new Spin(10);
+  console.log(s.spinResult[0][0]);
 
-    sprite.position.y = (window.innerHeight/3) * (i-1);
-    container.addChild(sprite);
+  let reel1 = new PIXI.Container();
+  let reel2 = new PIXI.Container();
+  let reel3 = new PIXI.Container();
+  let reel4 = new PIXI.Container();
+  let reel5 = new PIXI.Container();
+
+  for(let i=0; i<3; i++){
+    let sprite = PIXI.Sprite.from(s.spinResult[i][0].texture)
+    sprite.height = window.innerHeight/3;
+    sprite.width = window.innerHeight/3;
+    sprite.position.y = (window.innerHeight/3) * (i);
+
+    reel1.addChild(sprite);
+  }
+
+  
+  for(let i=0; i<3; i++){
+    let sprite = PIXI.Sprite.from(s.spinResult[i][1].texture)
+    sprite.height = window.innerHeight/3;
+    sprite.width = window.innerHeight/3;
+    sprite.position.y = (window.innerHeight/3) * (i);
+
+    reel2.addChild(sprite);
   }
   
-  app.stage.addChild(container);
-  initalize();
+  for(let i=0; i<3; i++){
+    let sprite = PIXI.Sprite.from(s.spinResult[i][2].texture)
+    sprite.height = window.innerHeight/3;
+    sprite.width = window.innerHeight/3;
+    sprite.position.y = (window.innerHeight/3) * (i);
+
+    reel3.addChild(sprite);
+  }
+
+  for(let i=0; i<3; i++){
+    let sprite = PIXI.Sprite.from(s.spinResult[i][3].texture)
+    sprite.height = window.innerHeight/3;
+    sprite.width = window.innerHeight/3;
+    sprite.position.y = (window.innerHeight/3) * (i);
+
+    reel4.addChild(sprite);
+  }
+
+  for(let i=0; i<3; i++){
+    let sprite = PIXI.Sprite.from(s.spinResult[i][4].texture)
+    sprite.height = window.innerHeight/3;
+    sprite.width = window.innerHeight/3;
+    sprite.position.y = (window.innerHeight/3) * (i);
+
+    reel5.addChild(sprite);
+  }
+  reel2.position.x = reel1.width;
+  reel3.position.x = reel1.width + reel2.width;
+  reel4.position.x = reel1.width + reel2.width + reel3.width;
+  reel5.position.x = reel1.width + reel2.width + reel3.width + reel4.width;
+  app.stage.addChild(reel1, reel2, reel3, reel4, reel5);
+  
+
 }
+
+
+
+
+
 
 function resize() {
   app.renderer.resize(window.innerWidth, window.innerHeight);

@@ -1,3 +1,10 @@
+let sp: Spin;
+
+enum States {
+  idle,
+  spinning,
+  result
+}
 
 const app = new PIXI.Application({
   backgroundColor: 0x1099bb
@@ -27,20 +34,29 @@ function showProgress(e: { progress: any; }): void{
 
 function doneLoading(){
   console.time()
-
+  let state: States = States.idle;
   let graphics: PIXI.Graphics = new PIXI.Graphics();
   graphics.beginFill(0x000000);
   graphics.drawCircle(70, window.innerHeight / 2, 40);
   graphics.endFill();
   graphics.interactive = true;
-  graphics.on('mousedown', spin);
+  graphics.on('mousedown', function(e: any) {
+    spin(e);
+  });
+  graphics.on('touchstart', function(e: any) {
+    spin(e);
+  });
 
   initalizeTextures();
+  
+  let s = new Spin(10, true);
 
-  let s = new Spin(10);
-
-  let reel_width: number;
-  let blur = new PIXI.filters.BlurFilter;
+  let reel_width: number = document.body.clientWidth / 5;
+  let symbolWidth = document.body.clientHeight / 3;
+  const speed: number = 70;
+  const blur = new PIXI.filters.BlurFilter;
+  blur.blurY = speed;
+  const maxIt: number = 100;
 
   let reel1: PIXI.Container = new PIXI.Container();
   let reel2: PIXI.Container = new PIXI.Container();
@@ -53,16 +69,17 @@ function doneLoading(){
     for(let j in reels){
       if(i == -1 || i == 3){
         let sprite = PIXI.Sprite.from(symbolChances.symbols[randomInt(0, 6)].texture);
-        sprite.height = window.innerHeight/3;
-        sprite.width = window.innerHeight/3;
-        sprite.position.y = (window.innerHeight/3) * (i);
-  
+        sprite.height = symbolWidth;
+        sprite.width = symbolWidth;
+        sprite.position.y = symbolWidth * (i);
+        
         reels[j].addChild(sprite);
+        
       }else{
         let sprite = PIXI.Sprite.from(s.spinResult[i][j].texture)
-        sprite.height = window.innerHeight/3;
-        sprite.width = window.innerHeight/3;
-        sprite.position.y = (window.innerHeight/3) * (i);
+        sprite.height = symbolWidth;
+        sprite.width = symbolWidth;
+        sprite.position.y = symbolWidth * (i);
 
         reels[j].addChild(sprite);
       }
@@ -76,37 +93,108 @@ function doneLoading(){
   
   console.timeEnd()
 
-  function spin(){
-    spinAnimation();
+  function spin(e: any){
+    if(state == States.idle){
+      sp = new Spin(10, true); //Spin result
+      spinAnimation(sp);
+      state = States.spinning;
+    }
   }
 
-  function animateReel(reel: PIXI.Container){
-    let it: number = 0;
-    app.ticker.add((delta) => {
-      reel.children.forEach(element => {
-        if(it < 25){
-          element.position.y -= Math.sqrt(it);
+  function spinAnimation(res: Spin){
+    let n = 0;
+    reels.forEach(element => {
+      n++;
+      setTimeout(() => {
+        animateReel(element, reels.indexOf(element), res);
+      }, 200 * n);
+    })
+  }
+
+  function animateReel(reel: PIXI.Container, reelNumber: number, res: Spin){
+
+    let it: number = 1; //Iteration
+    let spinDone: boolean = false;
+
+    let addNext = Math.floor(symbolWidth / speed); //When to add next symbol
+
+    let ticker = new PIXI.Ticker; //Ticker
+    let sR = [...res.spinResult]; //Copy of array from Spin object
+
+    function addSymbolAtTop(){
+      let temp = randomInt(0, 6); 
+
+      let sprite = PIXI.Sprite.from(symbolChances.symbols[temp].texture);
+      sprite.height = sprite.width = symbolWidth;
+      
+      reel.removeChildAt(reel.children.length-1)
+
+      for(let m = reel.children.length-1; m <= 0; m--){
+        reel.setChildIndex(reel.children[m], m+1)
+      }
+      reel.addChildAt(sprite, 0).position.y = 0 - symbolWidth;
+    }
+
+    function fixPosition(){
+      for(let p = 0; p < reel.children.length; p++){
+        reel.children[p].position.y = symbolWidth * (p-1);
+      }
+    }
+
+    function testMask(){
+      const m = new PIXI.Graphics();
+      m.beginFill(0xFF3300);
+      m.drawRect(0, 304, 5 * symbolWidth, 2 * symbolWidth);
+      m.endFill()
+
+      reel.mask = m;
+    }
+    ticker.start(); //Starting ticker...
+    ticker.add((delta) => { //Ticker function
+      if(it % addNext === 0 && it > 30){
+        if(it >= maxIt){
+          if(sR.length != 0){
+            let sprite = PIXI.Sprite.from(sR[sR.length-1][reelNumber].texture);
+            sprite.height = sprite.width = symbolWidth;
+
+            sR.splice(sR.length-1, 1);
+            reel.removeChildAt(reel.children.length-1)
+            
+            for(let m = reel.children.length-1; m <= 0; m--){
+              reel.setChildIndex(reel.children[m], m+1)
+            }
+            reel.addChildAt(sprite, 0).position.y = 0 - symbolWidth;
+          }else{
+            reel.filters = [];
+
+            ticker.stop();
+            state = States.idle;
+
+            addSymbolAtTop();
+            fixPosition();
+            
+            spinDone = true;
+          }
         }else{
-          reel.filters = [blur];
-          element.position.y += 100;
+          addSymbolAtTop();
+        }
+      }
+      reel.children.forEach(element => {
+        if(it < 25 && it < maxIt){
+          element.position.y -= (speed/100) * it;
+        }else{
+          if(!spinDone){
+            element.position.y += speed;
+            reel.filters = [blur]; //Blur to reel
+          }   
         }
       })
       it++;
     })
   }
 
-  function spinAnimation(){
-    let n = 0;
-    reels.forEach(element => {
-      n++;
-      setTimeout(function(){
-        animateReel(element)
-      }, 100 * n);
-    })
-  }
+  
 }
-
-
 
 
 

@@ -1,3 +1,4 @@
+
 const slot = {
     reels: 5,
     rows: 3,
@@ -35,7 +36,7 @@ let symbol5 = new SlotSymbol("symbol5", app.loader.resources["symbol5"].texture,
 let symbol6 = new SlotSymbol("symbol6", app.loader.resources["symbol6"].texture, [[],[],  [],         [3, 10],    [4, 50],    [5, 100] ]);
 let symbol7 = new SlotSymbol("symbol7", app.loader.resources["symbol7"].texture, [[],[],  [],         [],         [],         [5, 200] ]);
 
-function initalizeTextures(){
+function initalizeTextures(): void{
     symbol1.texture = app.loader.resources["symbol1"].texture;
     symbol2.texture = app.loader.resources["symbol2"].texture;
     symbol3.texture = app.loader.resources["symbol3"].texture;
@@ -71,26 +72,28 @@ class Spin{
 
     constructor(b: number, logs?: boolean){
         this.bet = b;
-
-        this.drawSymbols();
-        this.checkLines();
-
-        this.logs();
+        this.spinResult = this.drawSymbols(),
+        this.checkLines()
+        if(logs){
+            this.logs();
+        }
     }
 
     drawSymbols(){
+        let result: SlotSymbol[][] = [];
         for(let ro = 0; ro < slot.rows; ro++){
-            this.spinResult[ro] = [];
+            result[ro] = [];
             for(let re = 0; re < slot.reels; re++){
                 let temp = randomInt(1, symbolsAmount);
                 let res = symbolChances.numberToSymbol(temp);
                 if(res != undefined){
-                    this.spinResult[ro][re] = res;
+                    result[ro][re] = res;
                 }else{
                     throw new Error(`Error drawing value res (${res}) is undefined`);
                 }
             }
         }
+        return result;
     }
 
     checkLines(){
@@ -101,6 +104,9 @@ class Spin{
             }
             this.winOnLine(nowChecking, i)
         }
+        return new Promise(resolve => {
+            resolve("Lines checked");
+        })
     }
 
     winOnLine(line: SlotSymbol[], paylineNumber: number){
@@ -124,7 +130,7 @@ class Spin{
         }
     }
 
-    logs = () => {
+    logs(){
         let r = "";
         for(let ro = 0; ro < slot.rows; ro++){
             for(let re = 0; re < slot.reels; re++){
@@ -132,6 +138,7 @@ class Spin{
             }
             r += "\n"
         }
+        console.log(this.spinResult)
         console.log(r);
         console.log(this.winningLines)
     }

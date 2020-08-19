@@ -58,36 +58,29 @@ class Spin {
         this.winningLines = []; //Index of winning line in array from slot.paylines. First index(0) = first line
         this.bet = 0;
         this.totalWin = 0;
-        this.logs = () => {
-            let r = "";
-            for (let ro = 0; ro < slot.rows; ro++) {
-                for (let re = 0; re < slot.reels; re++) {
-                    r += this.spinResult[ro][re].name + " ";
-                }
-                r += "\n";
-            }
-            console.log(r);
-            console.log(this.winningLines);
-        };
         this.bet = b;
-        this.drawSymbols();
-        this.checkLines();
-        this.logs();
+        this.spinResult = this.drawSymbols(),
+            this.checkLines();
+        if (logs) {
+            this.logs();
+        }
     }
     drawSymbols() {
+        let result = [];
         for (let ro = 0; ro < slot.rows; ro++) {
-            this.spinResult[ro] = [];
+            result[ro] = [];
             for (let re = 0; re < slot.reels; re++) {
                 let temp = randomInt(1, symbolsAmount);
                 let res = symbolChances.numberToSymbol(temp);
                 if (res != undefined) {
-                    this.spinResult[ro][re] = res;
+                    result[ro][re] = res;
                 }
                 else {
                     throw new Error(`Error drawing value res (${res}) is undefined`);
                 }
             }
         }
+        return result;
     }
     checkLines() {
         for (let i = 0; i < slot.paylines.length; i++) { //Index of payline
@@ -97,6 +90,9 @@ class Spin {
             }
             this.winOnLine(nowChecking, i);
         }
+        return new Promise(resolve => {
+            resolve("Lines checked");
+        });
     }
     winOnLine(line, paylineNumber) {
         let noWilds = line.filter(item => item != symbol7);
@@ -120,6 +116,18 @@ class Spin {
                 this.winningLines[paylineNumber] = this.bet * noWilds[0].payouts[result.length][1];
             }
         }
+    }
+    logs() {
+        let r = "";
+        for (let ro = 0; ro < slot.rows; ro++) {
+            for (let re = 0; re < slot.reels; re++) {
+                r += this.spinResult[ro][re].name + " ";
+            }
+            r += "\n";
+        }
+        console.log(this.spinResult);
+        console.log(r);
+        console.log(this.winningLines);
     }
 }
 function countSymbols() {

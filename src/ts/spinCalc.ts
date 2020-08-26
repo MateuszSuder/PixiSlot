@@ -1,4 +1,7 @@
 
+
+console.log("spinCalc")
+
 const slot = {
     reels: 5,
     rows: 3,
@@ -104,9 +107,6 @@ class Spin{
             }
             this.winOnLine(nowChecking, i)
         }
-        return new Promise(resolve => {
-            resolve("Lines checked");
-        })
     }
 
     winOnLine(line: SlotSymbol[], paylineNumber: number){

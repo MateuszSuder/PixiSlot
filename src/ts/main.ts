@@ -1,3 +1,5 @@
+console.log("main");
+
 let sp: Spin;
 
 enum States { // States of spin
@@ -10,6 +12,7 @@ enum States { // States of spin
 const app = new PIXI.Application({ 
   backgroundColor: 0x1099bb
 });
+
 document.body.appendChild(app.view);
 
 app.loader.baseUrl = 'src/img/';
@@ -72,6 +75,14 @@ function doneLoading(){
 
   const maxIt: number = 100; // Max iterations in spin
 
+  // Creating menu
+  let menu: PIXI.Graphics = new PIXI.Graphics();
+  function createMenu(){
+    menu.beginFill(0x000000);
+    menu.drawRect(0, document.body.clientHeight - document.body.clientHeight / 4, document.body.clientWidth, document.body.clientHeight / 4);
+    menu.endFill();
+  }
+  
   // Creating reel containers
   let reel1: PIXI.Container = new PIXI.Container();
   let reel2: PIXI.Container = new PIXI.Container();
@@ -124,7 +135,10 @@ function doneLoading(){
 
   // Adding containers to stage
   app.stage.addChild(backReels, reel1, reel2, reel3, reel4, reel5, graphics);
-  
+
+  createMenu();
+  app.stage.addChild(menu);
+
   // Spin function
   function spin(e: any){
     if(state == States.idle){ // If is in idle

@@ -1,11 +1,20 @@
-console.log("main");
-
 let sp: Spin;
+const bets: number[] = [
+  0.5,
+  1,
+  2.5,
+  5,
+  10,
+  20,
+  40,
+  50
+]
 
 enum States { // States of spin
   idle,
   spinning,
-  result
+  result,
+  stopping
 }
 
 // Creating Pixi app
@@ -27,6 +36,11 @@ app.loader
 .add('symbol6', 'diamond.png') 
 .add('symbol7', 'wild.png')
 .add('back', 'symbolBack.png')
+.add('columns', 'columns.png')
+.add('spinBttn', 'spinBttn.png')
+.add('test', 'test.png')
+.add('plus', 'plus.png')
+.add('minus', 'minus.png')
 
 app.loader.onProgress.add(showProgress);
 app.loader.onComplete.add(doneLoading)
@@ -42,21 +56,6 @@ function showProgress(e: { progress: any; }): void{
 function doneLoading(){
   let state: States = States.idle; // Setting state to idle
 
-  //Spin button for test
-  let graphics: PIXI.Graphics = new PIXI.Graphics();
-  graphics.beginFill(0x000000);
-  graphics.drawCircle(70, window.innerHeight / 2, 40);
-  graphics.endFill();
-  graphics.interactive = true;
-
-  // Events for button
-  graphics.on('mousedown', function(e: any) {
-    spin(e);
-  });
-  graphics.on('touchstart', function(e: any) {
-    spin(e);
-  });
-
   // Initalizing textures
   initalizeTextures();
 
@@ -65,6 +64,8 @@ function doneLoading(){
 
   // Helpful variables
   let reel_width: number = document.body.clientWidth / 3;
+  let reelHeight: number;
+  let startingX: number;
   let symbolWidth = document.body.clientHeight / 3;
 
   const speed: number = 70; // Speed of spin
@@ -73,16 +74,119 @@ function doneLoading(){
   blur.blurY = speed / 4;
   blur.blurX = 0;
 
-  const maxIt: number = 100; // Max iterations in spin
+  const grey = new PIXI.filters.ColorMatrixFilter;
+  grey.desaturate();
+
+  const maxIt: number = 150; // Max iterations in spin
 
   // Creating menu
   let menu: PIXI.Graphics = new PIXI.Graphics();
-  function createMenu(){
-    menu.beginFill(0x000000);
-    menu.drawRect(0, document.body.clientHeight - document.body.clientHeight / 4, document.body.clientWidth, document.body.clientHeight / 4);
-    menu.endFill();
-  }
-  
+  menu.beginFill(0x000000);
+  menu.drawRect(0, document.body.clientHeight - document.body.clientHeight / 4, document.body.clientWidth, document.body.clientHeight / 4);
+  menu.alpha = 0.8;
+  menu.endFill();
+
+  // Creating button from texture
+  let bttn = PIXI.Sprite.from(app.loader.resources['spinBttn'].texture);
+  bttn.width = bttn.height = menu.height * 3/5;
+  bttn.position.x = document.body.clientWidth / 2 - bttn.width/2;
+  bttn.position.y = menu.getBounds().y + menu.getBounds().height / 2 - bttn.width / 2;
+  bttn.interactive = true;
+
+  // Creating text on menu - bet
+  let bet = new PIXI.Text('10', {fontFamily: 'Monoscape', fill: [0xffe000, 0xbfa800],fontSize: menu.height / 3, dropShadow: true, dropShadowBlur: 7, strokeThickness: 1})
+
+  // Creating plus for increasing bet
+  let plus = PIXI.Sprite.from(app.loader.resources['plus'].texture)
+  plus.width = plus.height = bet.width / 2;
+  plus.interactive = true;
+
+  // Creating minus for decreasing bet
+  let minus = PIXI.Sprite.from(app.loader.resources['minus'].texture)
+  minus.width = minus.height = bet.width / 2;
+  minus.interactive = true;
+
+  // Setting postion for bet, +, -
+  let betY = menu.getBounds().y + menu.getBounds().height / 2 - bet.height / 2;
+  bet.position.y = betY;
+  plus.position.y = betY + plus.width / 2
+  minus.position.y = betY + minus.width / 2;
+
+  minus.position.x = document.body.clientWidth / 6;
+  bet.position.x = minus.position.x + minus.width * 2;
+  plus.position.x = bet.position.x + bet.width + plus.width;
+
+  // Events for button
+  bttn.on('mousedown', function(e: any) {
+    if(state == States.idle){
+      spin(e);
+    }else if(state == States.spinning){
+      state = States.stopping;
+    }
+  });
+  bttn.on('touchstart', function(e: any) {
+    if(state == States.idle){
+      spin(e);
+    }else if(state == States.spinning){
+      state = States.stopping;
+    }
+  });
+
+  plus.on('mousedown', function(e: any) {
+    if(bet.text == bets[bets.length - 1].toString()){
+      return;
+    }else{
+      minus.filters = [];
+      let temp: number = bets.indexOf(parseFloat(bet.text));
+      let temp2: number = bets[temp + 1];
+      bet.text = temp2.toString();
+      if(bets.indexOf(temp2) == bets.length - 1){
+        plus.filters = [grey];
+      }
+    }   
+  })
+  plus.on('touchstart', function(e: any) {
+    if(bet.text == bets[bets.length - 1].toString()){
+      return;
+    }else{
+      minus.filters = [];
+      let temp: number = bets.indexOf(parseFloat(bet.text));
+      let temp2: number = bets[temp + 1];
+      bet.text = temp2.toString();
+      if(bets.indexOf(temp2) == bets.length - 1){
+        plus.filters = [grey];
+      }
+    }   
+  })
+
+  minus.on('mousedown', function(e: any) {
+    if(bet.text == bets[0].toString()){
+      return;
+    }else{
+      plus.filters = [];
+      let temp: number = bets.indexOf(parseFloat(bet.text));
+      let temp2: number = bets[temp - 1];
+      bet.text = temp2.toString();
+      if(temp2 == bets[0]){
+        minus.filters = [grey];
+      }
+    }    
+  })
+  minus.on('touchstart', function(e: any) {
+    if(bet.text == bets[0].toString()){
+      return;
+    }else{
+      plus.filters = [];
+      let temp: number = bets.indexOf(parseFloat(bet.text));
+      let temp2: number = bets[temp - 1];
+      bet.text = temp2.toString();
+      if(temp2 == bets[0]){
+        minus.filters = [grey];
+      }
+    }     
+  })
+
+
   // Creating reel containers
   let reel1: PIXI.Container = new PIXI.Container();
   let reel2: PIXI.Container = new PIXI.Container();
@@ -92,14 +196,18 @@ function doneLoading(){
   let reels: PIXI.Container[] = [reel1, reel2, reel3, reel4, reel5]; // Putting containers together
   let backReels: PIXI.Container = new PIXI.Container(); // Container containing sprites for reel backgrounds
 
+  // Setting variables
+  reelHeight = document.body.clientHeight - menu.getBounds().height;
+  symbolWidth = reelHeight / 3;
+  startingX = document.body.clientWidth / 2 - symbolWidth * 5 / 2;
+
   // Adding sprites for reels backgrounds
   for(let i = 0; i< 3; i++){
     for(let j = 0; j< 5; j++){
       let sprite = PIXI.Sprite.from(app.loader.resources['back'].texture);
-      sprite.height = symbolWidth;
-      sprite.width = symbolWidth;
+      sprite.height = sprite.width = symbolWidth;
       sprite.position.y = symbolWidth * (i);
-      sprite.position.x = symbolWidth * (j);
+      sprite.position.x = startingX + symbolWidth * (j);
 
       backReels.addChild(sprite);
     }
@@ -107,6 +215,11 @@ function doneLoading(){
 
   // Showing spin result and adding symbols at top and bottom
   for(let i = -1; i < 4; i++){
+    // Mask
+    let mask = new PIXI.Graphics();
+    mask.beginFill(0xFF3300);
+    mask.drawRect(startingX + (i+1) * symbolWidth, 0, symbolWidth, reelHeight);
+    mask.endFill();
     for(let j in reels){
       if(i == -1 || i == 3){
         let sprite = PIXI.Sprite.from(symbolChances.symbols[randomInt(0, 6)].texture);
@@ -125,19 +238,24 @@ function doneLoading(){
         reels[j].addChild(sprite);
       }
     }
+    reels[i+1].mask = mask;
   }
 
   // Setting positions of reels
-  reel2.position.x = reel1.width;
-  reel3.position.x = reel1.width + reel2.width;
-  reel4.position.x = reel1.width + reel2.width + reel3.width;
-  reel5.position.x = reel1.width + reel2.width + reel3.width + reel4.width;
+  reel1.position.x = startingX; 
+  reel2.position.x = startingX + symbolWidth;
+  reel3.position.x = startingX + symbolWidth * 2;
+  reel4.position.x = startingX + symbolWidth * 3;
+  reel5.position.x = startingX + symbolWidth * 4;
+
+  // Adding columns
+  let columns = PIXI.Sprite.from(app.loader.resources['columns'].texture)
+  columns.height = reelHeight;
+  columns.width = symbolWidth * 5;
+  columns.position.x = startingX; 
 
   // Adding containers to stage
-  app.stage.addChild(backReels, reel1, reel2, reel3, reel4, reel5, graphics);
-
-  createMenu();
-  app.stage.addChild(menu);
+  app.stage.addChild(backReels, reel1, reel2, reel3, reel4, reel5, columns, menu, bttn, bet, plus, minus);
 
   // Spin function
   function spin(e: any){
@@ -162,8 +280,14 @@ function doneLoading(){
   }
 
   function animateReel(reel: PIXI.Container, reelNumber: number, res: Spin){
+    let it: number = 1; // Iteration
+    if(state == States.spinning){
+      it = 1;
+    }else if(state == States.stopping || state == States.result){
+      it = maxIt;
+    }
+      
 
-    let it: number = 1; //Iteration
     let spinDone: boolean = false;
 
     let addNext = Math.floor(symbolWidth / speed); //When to add next symbol
@@ -193,17 +317,11 @@ function doneLoading(){
       }
     }
 
-    function testMask(){
-      const m = new PIXI.Graphics();
-      m.beginFill(0xFF3300);
-      m.drawRect(0, 304, 5 * symbolWidth, 2 * symbolWidth);
-      m.endFill()
-
-      reel.mask = m;
-    }
-
     ticker.start(); //Starting ticker...
     ticker.add((delta) => { //Ticker function
+      if(state == States.stopping){
+        it = maxIt;
+      }
       if(it % addNext === 0 && it > 30){ // Condition to add symbol on top
         if(it >= maxIt){ // If its after max iterations - we want to show spin result then
           if(sR.length != 0){ // If we still have symbols to show
@@ -223,7 +341,9 @@ function doneLoading(){
             reel.filters = []; // Clearing filters
 
             ticker.stop(); // Stoping ticker
-            state = States.idle; // Changning state to idle
+            state = States.result; // Changning state to idle
+
+            it = 0;
 
             addSymbolAtTop(); // Adding symbol at top
             fixPosition(); // Fixing position
@@ -238,7 +358,7 @@ function doneLoading(){
         if(it < 25 && it < maxIt){ // First symbols go backward
           element.position.y -= (speed/100) * it;
         }else{
-          if(!spinDone){ // If spin isn't dont
+          if(!spinDone){ // If spin isn't done
             element.position.y += speed; // Moving symbols
             reel.filters = [blur]; //Blur to reel
           }   
@@ -247,8 +367,6 @@ function doneLoading(){
       it++; // Iteration
     })
   }
-
-  
 }
 
 

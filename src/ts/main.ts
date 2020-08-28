@@ -1,4 +1,6 @@
 let sp: Spin;
+let stake: number = 10;
+let bal: number = 10000.00;
 const bets: number[] = [
   0.5,
   1,
@@ -60,7 +62,7 @@ function doneLoading(){
   initalizeTextures();
 
   // Creating new spin
-  let s = new Spin(10, true);
+  let s = new Spin(10, false);
 
   // Helpful variables
   let reel_width: number = document.body.clientWidth / 3;
@@ -94,7 +96,41 @@ function doneLoading(){
   bttn.interactive = true;
 
   // Creating text on menu - bet
-  let bet = new PIXI.Text('10', {fontFamily: 'Monoscape', fill: [0xffe000, 0xbfa800],fontSize: menu.height / 3, dropShadow: true, dropShadowBlur: 7, strokeThickness: 1})
+  let bet = new PIXI.Text('10', 
+  {
+    fontFamily: 'Monoscape',
+    fill: [0xffe000, 0xbfa800],
+    fontSize: menu.width / 17,
+    dropShadow: true,
+    dropShadowBlur: 7,
+    strokeThickness: 1
+  })
+
+  // Creating additional bar for balance
+  let bar: PIXI.Graphics = new PIXI.Graphics();
+  bar.beginFill(0x000000);
+  bar.drawRect(0, document.body.clientHeight - menu.height / 10, document.body.clientWidth, menu.height / 12);
+  bar.endFill();
+
+  // Creating balance label
+  let balanceLabel = new PIXI.Text('Balance: ', 
+  {
+    fontFamily: 'Monoscape',
+    fill: [0xffffff, 0xd8d8d8],
+    fontSize: bar.height
+  })
+  balanceLabel.anchor.set(0, 0.5)
+  balanceLabel.position.y = document.body.clientHeight - bar.height - balanceLabel.getBounds().top / 2;
+
+  let balance = new PIXI.Text('10,000.00',
+  {
+    fontFamily: 'Monoscape',
+    fill: [0xffffff, 0xd8d8d8],
+    fontSize: bar.height
+  })
+  balance.position.x = balanceLabel.getBounds().right;
+  balance.anchor.set(0, 0.5)
+  balance.position.y = document.body.clientHeight - bar.height - balance.getBounds().top / 2;
 
   // Creating plus for increasing bet
   let plus = PIXI.Sprite.from(app.loader.resources['plus'].texture)
@@ -116,8 +152,31 @@ function doneLoading(){
   bet.position.x = minus.position.x + minus.width * 2;
   plus.position.x = bet.position.x + bet.width + plus.width;
 
+  // Function to change balance
+  function changeBalance(changeBy: number){
+    bal = bal + changeBy;
+    let balS: string = bal.toFixed(2); // String with 2 digits after the decimal point
+    let balInt: string = bal.toFixed(0) // String with no digits after the decimal point
+    let output: string = "";
+    output = `.${balS[balS.length - 2]}${balS[balS.length - 1]}`;
+    let j = 0
+    for(let i = balInt.length - 1; i >= 0; i--){
+      if(j % 3 == 0 && j != 0){
+        output = `${balInt[i]},${output}`;
+      }else{
+        output = `${balInt[i]}${output}`;
+      }
+      j++;
+    }
+    balance.text = output;
+  }
+
   // Events for button
   bttn.on('mousedown', function(e: any) {
+    if(bal - stake < 0){
+      return;
+    }
+    changeBalance(-stake);
     if(state == States.idle){
       spin(e);
     }else if(state == States.spinning){
@@ -125,6 +184,10 @@ function doneLoading(){
     }
   });
   bttn.on('touchstart', function(e: any) {
+    if(bal - stake < 0){
+      return;
+    }
+    changeBalance(-stake);
     if(state == States.idle){
       spin(e);
     }else if(state == States.spinning){
@@ -140,6 +203,7 @@ function doneLoading(){
       let temp: number = bets.indexOf(parseFloat(bet.text));
       let temp2: number = bets[temp + 1];
       bet.text = temp2.toString();
+      stake = temp2;
       if(bets.indexOf(temp2) == bets.length - 1){
         plus.filters = [grey];
       }
@@ -153,6 +217,7 @@ function doneLoading(){
       let temp: number = bets.indexOf(parseFloat(bet.text));
       let temp2: number = bets[temp + 1];
       bet.text = temp2.toString();
+      stake = temp2;
       if(bets.indexOf(temp2) == bets.length - 1){
         plus.filters = [grey];
       }
@@ -167,6 +232,7 @@ function doneLoading(){
       let temp: number = bets.indexOf(parseFloat(bet.text));
       let temp2: number = bets[temp - 1];
       bet.text = temp2.toString();
+      stake = temp2;
       if(temp2 == bets[0]){
         minus.filters = [grey];
       }
@@ -180,6 +246,7 @@ function doneLoading(){
       let temp: number = bets.indexOf(parseFloat(bet.text));
       let temp2: number = bets[temp - 1];
       bet.text = temp2.toString();
+      stake = temp2;
       if(temp2 == bets[0]){
         minus.filters = [grey];
       }
@@ -255,12 +322,13 @@ function doneLoading(){
   columns.position.x = startingX; 
 
   // Adding containers to stage
-  app.stage.addChild(backReels, reel1, reel2, reel3, reel4, reel5, columns, menu, bttn, bet, plus, minus);
+  app.stage.addChild(backReels, reel1, reel2, reel3, reel4, reel5, columns, menu, bttn, bet, plus, minus, bar, balanceLabel, balance);
 
   // Spin function
   function spin(e: any){
     if(state == States.idle){ // If is in idle
-      sp = new Spin(10, true); //Spin result
+      console.log(stake)
+      sp = new Spin(stake, true); //Spin result
 
       spinAnimation(sp); // Running animation
 

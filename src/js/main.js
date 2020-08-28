@@ -7,6 +7,8 @@ var __spreadArrays = (this && this.__spreadArrays) || function () {
     return r;
 };
 var sp;
+var stake = 10;
+var bal = 10000.00;
 var bets = [
     0.5,
     1,
@@ -58,7 +60,7 @@ function doneLoading() {
     // Initalizing textures
     initalizeTextures();
     // Creating new spin
-    var s = new Spin(10, true);
+    var s = new Spin(10, false);
     // Helpful variables
     var reel_width = document.body.clientWidth / 3;
     var reelHeight;
@@ -84,7 +86,35 @@ function doneLoading() {
     bttn.position.y = menu.getBounds().y + menu.getBounds().height / 2 - bttn.width / 2;
     bttn.interactive = true;
     // Creating text on menu - bet
-    var bet = new PIXI.Text('10', { fontFamily: 'Monoscape', fill: [0xffe000, 0xbfa800], fontSize: menu.height / 3, dropShadow: true, dropShadowBlur: 7, strokeThickness: 1 });
+    var bet = new PIXI.Text('10', {
+        fontFamily: 'Monoscape',
+        fill: [0xffe000, 0xbfa800],
+        fontSize: menu.width / 17,
+        dropShadow: true,
+        dropShadowBlur: 7,
+        strokeThickness: 1
+    });
+    // Creating additional bar for balance
+    var bar = new PIXI.Graphics();
+    bar.beginFill(0x000000);
+    bar.drawRect(0, document.body.clientHeight - menu.height / 10, document.body.clientWidth, menu.height / 12);
+    bar.endFill();
+    // Creating balance label
+    var balanceLabel = new PIXI.Text('Balance: ', {
+        fontFamily: 'Monoscape',
+        fill: [0xffffff, 0xd8d8d8],
+        fontSize: bar.height
+    });
+    balanceLabel.anchor.set(0, 0.5);
+    balanceLabel.position.y = document.body.clientHeight - bar.height - balanceLabel.getBounds().top / 2;
+    var balance = new PIXI.Text('10,000.00', {
+        fontFamily: 'Monoscape',
+        fill: [0xffffff, 0xd8d8d8],
+        fontSize: bar.height
+    });
+    balance.position.x = balanceLabel.getBounds().right;
+    balance.anchor.set(0, 0.5);
+    balance.position.y = document.body.clientHeight - bar.height - balance.getBounds().top / 2;
     // Creating plus for increasing bet
     var plus = PIXI.Sprite.from(app.loader.resources['plus'].texture);
     plus.width = plus.height = bet.width / 2;
@@ -101,8 +131,31 @@ function doneLoading() {
     minus.position.x = document.body.clientWidth / 6;
     bet.position.x = minus.position.x + minus.width * 2;
     plus.position.x = bet.position.x + bet.width + plus.width;
+    // Function to change balance
+    function changeBalance(changeBy) {
+        bal = bal + changeBy;
+        var balS = bal.toFixed(2); // String with 2 digits after the decimal point
+        var balInt = bal.toFixed(0); // String with no digits after the decimal point
+        var output = "";
+        output = "." + balS[balS.length - 2] + balS[balS.length - 1];
+        var j = 0;
+        for (var i = balInt.length - 1; i >= 0; i--) {
+            if (j % 3 == 0 && j != 0) {
+                output = balInt[i] + "," + output;
+            }
+            else {
+                output = "" + balInt[i] + output;
+            }
+            j++;
+        }
+        balance.text = output;
+    }
     // Events for button
     bttn.on('mousedown', function (e) {
+        if (bal - stake < 0) {
+            return;
+        }
+        changeBalance(-stake);
         if (state == States.idle) {
             spin(e);
         }
@@ -111,6 +164,10 @@ function doneLoading() {
         }
     });
     bttn.on('touchstart', function (e) {
+        if (bal - stake < 0) {
+            return;
+        }
+        changeBalance(-stake);
         if (state == States.idle) {
             spin(e);
         }
@@ -127,6 +184,7 @@ function doneLoading() {
             var temp = bets.indexOf(parseFloat(bet.text));
             var temp2 = bets[temp + 1];
             bet.text = temp2.toString();
+            stake = temp2;
             if (bets.indexOf(temp2) == bets.length - 1) {
                 plus.filters = [grey];
             }
@@ -141,6 +199,7 @@ function doneLoading() {
             var temp = bets.indexOf(parseFloat(bet.text));
             var temp2 = bets[temp + 1];
             bet.text = temp2.toString();
+            stake = temp2;
             if (bets.indexOf(temp2) == bets.length - 1) {
                 plus.filters = [grey];
             }
@@ -155,6 +214,7 @@ function doneLoading() {
             var temp = bets.indexOf(parseFloat(bet.text));
             var temp2 = bets[temp - 1];
             bet.text = temp2.toString();
+            stake = temp2;
             if (temp2 == bets[0]) {
                 minus.filters = [grey];
             }
@@ -169,6 +229,7 @@ function doneLoading() {
             var temp = bets.indexOf(parseFloat(bet.text));
             var temp2 = bets[temp - 1];
             bet.text = temp2.toString();
+            stake = temp2;
             if (temp2 == bets[0]) {
                 minus.filters = [grey];
             }
@@ -233,11 +294,12 @@ function doneLoading() {
     columns.width = symbolWidth * 5;
     columns.position.x = startingX;
     // Adding containers to stage
-    app.stage.addChild(backReels, reel1, reel2, reel3, reel4, reel5, columns, menu, bttn, bet, plus, minus);
+    app.stage.addChild(backReels, reel1, reel2, reel3, reel4, reel5, columns, menu, bttn, bet, plus, minus, bar, balanceLabel, balance);
     // Spin function
     function spin(e) {
         if (state == States.idle) { // If is in idle
-            sp = new Spin(10, true); //Spin result
+            console.log(stake);
+            sp = new Spin(stake, true); //Spin result
             spinAnimation(sp); // Running animation
             state = States.spinning; // Setting state to 'spinning'
         }

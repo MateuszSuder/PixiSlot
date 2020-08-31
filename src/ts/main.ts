@@ -1,6 +1,8 @@
 let sp: Spin;
 let stake: number = 10;
 let bal: number = 10000.00;
+let tWin: number = 0;
+let showLines: PIXI.Ticker;
 const bets: number[] = [
   0.5,
   1,
@@ -15,7 +17,8 @@ const bets: number[] = [
 enum States { // States of spin
   idle,
   spinning,
-  result,
+  resultWaiting,
+  resultDone,
   stopping
 }
 
@@ -43,6 +46,7 @@ app.loader
 .add('test', 'test.png')
 .add('plus', 'plus.png')
 .add('minus', 'minus.png')
+.add('satchel', 'satchel.png')
 
 app.loader.onProgress.add(showProgress);
 app.loader.onComplete.add(doneLoading)
@@ -76,8 +80,8 @@ function doneLoading(){
   blur.blurY = speed / 4;
   blur.blurX = 0;
 
-  const grey = new PIXI.filters.ColorMatrixFilter;
-  grey.desaturate();
+  const gray = new PIXI.filters.ColorMatrixFilter;
+  gray.desaturate();
 
   const maxIt: number = 150; // Max iterations in spin
 
@@ -90,9 +94,10 @@ function doneLoading(){
 
   // Creating button from texture
   let bttn = PIXI.Sprite.from(app.loader.resources['spinBttn'].texture);
+  bttn.anchor.set(0.5, 0.5);
   bttn.width = bttn.height = menu.height * 3/5;
-  bttn.position.x = document.body.clientWidth / 2 - bttn.width/2;
-  bttn.position.y = menu.getBounds().y + menu.getBounds().height / 2 - bttn.width / 2;
+  bttn.position.x = document.body.clientWidth / 2;
+  bttn.position.y = menu.getBounds().y + menu.getBounds().height / 2;
   bttn.interactive = true;
 
   // Creating text on menu - bet
@@ -131,6 +136,39 @@ function doneLoading(){
   balance.position.x = balanceLabel.getBounds().right;
   balance.anchor.set(0, 0.5)
   balance.position.y = document.body.clientHeight - bar.height - balance.getBounds().top / 2;
+
+  // Win label
+  let winLabel = new PIXI.Text('Win', 
+  {
+    fontFamily: 'Monoscape',
+    fill: [0xffffff, 0xd8d8d8],
+    fontSize: menu.height / 5
+  })
+  winLabel.anchor.set(0.5, 0.5);
+  winLabel.position.x = document.body.clientWidth * 9/12;
+  winLabel.position.y = menu.getBounds().y + menu.height / 2 - menu.height / 5;
+
+  // Win text
+  let win = new PIXI.Text('', 
+  {
+    fontFamily: 'Monoscape',
+    fill: [0xffe000, 0xbfa800],
+    fontSize: menu.height / 5
+  })
+  win.anchor.set(0.5);
+  win.position.x = document.body.clientWidth * 9/12;
+  win.position.y = menu.getBounds().y + menu.height / 2
+
+  // Text about win on lines
+  let winInfo = new PIXI.Text('', 
+  {
+    fontFamily: 'Monoscape',
+    fill: [0xffffff, 0xd8d8d8],
+    fontSize: menu.height / 10
+  })
+  winInfo.anchor.set(0.5, 0.5);
+  winInfo.position.x = bttn.getBounds().x + bttn.width / 2;
+  winInfo.position.y = menu.getBounds().y + winInfo.height / 2;
 
   // Creating plus for increasing bet
   let plus = PIXI.Sprite.from(app.loader.resources['plus'].texture)
@@ -171,24 +209,45 @@ function doneLoading(){
     balance.text = output;
   }
 
+  // Ticker for spinning bttn animation
+  const rotTicker = new PIXI.Ticker();
+  rotTicker.add((delta) =>{
+    bttn.angle += 30
+  })
+
   // Events for button
   bttn.on('mousedown', function(e: any) {
     if(bal - stake < 0){
       return;
     }
-    changeBalance(-stake);
     if(state == States.idle){
+      rotTicker.start();
+      changeBalance(-stake);
       spin(e);
     }else if(state == States.spinning){
       state = States.stopping;
+    }else if(state == States.resultDone){
+      bttn.texture = app.loader.resources['spinBttn'].texture;
+      if(tWin > 0)
+        changeBalance(tWin);
+      win.text = "";
+      winInfo.text = "";
+      reels.forEach(reel => {
+        reel.children.forEach(ch => {
+          ch.filters = [];
+        })
+      })
+      showLines.stop();
+      state = States.idle;
     }
   });
   bttn.on('touchstart', function(e: any) {
     if(bal - stake < 0){
       return;
     }
-    changeBalance(-stake);
     if(state == States.idle){
+      rotTicker.start();
+      changeBalance(-stake);
       spin(e);
     }else if(state == States.spinning){
       state = States.stopping;
@@ -205,7 +264,7 @@ function doneLoading(){
       bet.text = temp2.toString();
       stake = temp2;
       if(bets.indexOf(temp2) == bets.length - 1){
-        plus.filters = [grey];
+        plus.filters = [gray];
       }
     }   
   })
@@ -219,7 +278,7 @@ function doneLoading(){
       bet.text = temp2.toString();
       stake = temp2;
       if(bets.indexOf(temp2) == bets.length - 1){
-        plus.filters = [grey];
+        plus.filters = [gray];
       }
     }   
   })
@@ -234,7 +293,7 @@ function doneLoading(){
       bet.text = temp2.toString();
       stake = temp2;
       if(temp2 == bets[0]){
-        minus.filters = [grey];
+        minus.filters = [gray];
       }
     }    
   })
@@ -248,11 +307,10 @@ function doneLoading(){
       bet.text = temp2.toString();
       stake = temp2;
       if(temp2 == bets[0]){
-        minus.filters = [grey];
+        minus.filters = [gray];
       }
     }     
   })
-
 
   // Creating reel containers
   let reel1: PIXI.Container = new PIXI.Container();
@@ -290,16 +348,14 @@ function doneLoading(){
     for(let j in reels){
       if(i == -1 || i == 3){
         let sprite = PIXI.Sprite.from(symbolChances.symbols[randomInt(0, 6)].texture);
-        sprite.height = symbolWidth;
-        sprite.width = symbolWidth;
+        sprite.height = sprite.width = symbolWidth;
         sprite.position.y = symbolWidth * (i);
         
         reels[j].addChild(sprite);
         
       }else{
         let sprite = PIXI.Sprite.from(s.spinResult[i][j].texture)
-        sprite.height = symbolWidth;
-        sprite.width = symbolWidth;
+        sprite.height = sprite.width = symbolWidth;
         sprite.position.y = symbolWidth * (i);
 
         reels[j].addChild(sprite);
@@ -322,12 +378,98 @@ function doneLoading(){
   columns.position.x = startingX; 
 
   // Adding containers to stage
-  app.stage.addChild(backReels, reel1, reel2, reel3, reel4, reel5, columns, menu, bttn, bet, plus, minus, bar, balanceLabel, balance);
+  app.stage.addChild(backReels, reel1, reel2, reel3, reel4, reel5, columns, menu, bttn, bet, plus, minus, bar, balanceLabel, balance, winLabel, win, winInfo);
+
+  // Show results function
+  function showResults(result: Spin){
+    showLines = new PIXI.Ticker();
+    tWin = result.totalWin;
+    state = States.resultDone;
+    let copySOWf = [...result.symbolsOnWinning]; // Copy
+    let winC = result.winningLines.filter((el) => {
+      return el != null;
+    })
+    copySOWf = copySOWf.filter((el) => { // Delete empty elements
+      return el != null;
+    })
+
+    let symbolsToHighlight: PIXI.DisplayObject[][] = [];
+    let winningMessage: string[] = [];
+
+    let start: number = 0;
+    
+    
+    if(copySOWf.length > 0){
+      for(let i = 0; i < copySOWf.length; i++){
+        symbolsToHighlight[i] = [];
+        inner:
+        for(let j = start; j < 5; j++){
+          if(result.symbolsOnWinning[j] != null){
+            for(let q = 0; q < result.symbolsOnWinning[j]; q++){
+              symbolsToHighlight[i].push(reels[q].children[slot.paylines[j][q]+1])
+            }
+          winningMessage.push(`Won ${result.winningLines[j]} on line ${j+1}`);
+          start = j+1;
+          break inner;
+          }
+        }
+      }
+      showLines.start();
+      bttn.texture = app.loader.resources['satchel'].texture;
+    }else{
+      state = States.idle;
+    }
+
+    let time: number = 0;
+    let ln: number = 0;
+    let w: number = 0;
+    
+    showLines.add((delta) => {
+      if(time >= 30 * copySOWf.length){
+        if(time % 120 == 0){
+          winInfo.text = winningMessage[ln]
+          reels.forEach(reel =>{
+            reel.children.forEach(ch => {
+              if(ch == symbolsToHighlight[ln][reels.indexOf(reel)]){
+                ch.filters = [];
+              }else{
+                ch.filters = [gray];
+              }
+            })
+          })
+          if(ln == symbolsToHighlight.length - 1){
+            ln = 0;
+          }else{
+            ln++;
+          }
+        }
+      }else{
+        if(time % 30 == 0){
+          w = w + winC[ln];
+          win.text = (w).toString();
+          reels.forEach(reel =>{
+            reel.children.forEach(ch => {
+              if(ch == symbolsToHighlight[ln][reels.indexOf(reel)]){
+                ch.filters = [];
+              }else{
+                ch.filters = [gray];
+              }
+            })
+          })
+          if(ln == symbolsToHighlight.length - 1){
+            ln = 0;
+          }else{
+            ln++;
+          }
+        }
+      }
+      time++;
+    })
+  }
 
   // Spin function
   function spin(e: any){
     if(state == States.idle){ // If is in idle
-      console.log(stake)
       sp = new Spin(stake, true); //Spin result
 
       spinAnimation(sp); // Running animation
@@ -351,7 +493,7 @@ function doneLoading(){
     let it: number = 1; // Iteration
     if(state == States.spinning){
       it = 1;
-    }else if(state == States.stopping || state == States.result){
+    }else if(state == States.stopping || state == States.resultWaiting){
       it = maxIt;
     }
       
@@ -409,14 +551,20 @@ function doneLoading(){
             reel.filters = []; // Clearing filters
 
             ticker.stop(); // Stoping ticker
-            state = States.result; // Changning state to idle
-
+            state = States.resultWaiting; // Changing state to show result
+            
             it = 0;
 
             addSymbolAtTop(); // Adding symbol at top
             fixPosition(); // Fixing position
             
             spinDone = true; // Saying to program that spin is done
+
+            if(reelNumber == 4){
+              rotTicker.stop();
+              bttn.angle = 0;
+              showResults(res)
+            }
           }
         }else{ // If it's not after max iterations - random elements animation
           addSymbolAtTop(); // Adding symbol at top

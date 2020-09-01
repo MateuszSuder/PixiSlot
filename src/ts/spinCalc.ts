@@ -1,7 +1,3 @@
-
-
-console.log("spinCalc")
-
 const slot = {
     reels: 5,
     rows: 3,
@@ -15,6 +11,7 @@ const slot = {
         [0, 1, 2, 1, 0],
         [2, 1, 0, 1, 2],
     ],
+    RTP: "98,64%"
 }
 
 class SlotSymbol{
@@ -31,13 +28,13 @@ class SlotSymbol{
 
 
 //Symbols declaration
-let symbol1 = new SlotSymbol("symbol1", app.loader.resources["symbol1"].texture, [[],[],  [2, 0.5],   [3, 1.5],   [4, 5],     [5, 20] ]);
-let symbol2 = new SlotSymbol("symbol2", app.loader.resources["symbol2"].texture, [[],[],  [],         [3, 2],     [4, 7.5],   [5, 30] ]);
-let symbol3 = new SlotSymbol("symbol3", app.loader.resources["symbol3"].texture, [[],[],  [],         [3, 2],     [4, 7.5],   [5, 30] ]);
-let symbol4 = new SlotSymbol("symbol4", app.loader.resources["symbol4"].texture, [[],[],  [],         [3, 5],     [4, 15],    [5, 50] ]);
-let symbol5 = new SlotSymbol("symbol5", app.loader.resources["symbol5"].texture, [[],[],  [],         [3, 7.5],   [4, 20],    [5, 60] ]);
-let symbol6 = new SlotSymbol("symbol6", app.loader.resources["symbol6"].texture, [[],[],  [],         [3, 10],    [4, 50],    [5, 100] ]);
-let symbol7 = new SlotSymbol("symbol7", app.loader.resources["symbol7"].texture, [[],[],  [],         [],         [],         [5, 200] ]);
+let symbol1 = new SlotSymbol("symbol1", app.loader.resources["symbol1"].texture, [[],[],  [2, 0.5],   [3, 1],     [4, 2.5],   [5, 5] ]);
+let symbol2 = new SlotSymbol("symbol2", app.loader.resources["symbol2"].texture, [[],[],  [],         [3, 1],     [4, 2.5],   [5, 5] ]);
+let symbol3 = new SlotSymbol("symbol3", app.loader.resources["symbol3"].texture, [[],[],  [],         [3, 2],     [4, 3],     [5, 10] ]);
+let symbol4 = new SlotSymbol("symbol4", app.loader.resources["symbol4"].texture, [[],[],  [],         [3, 5],     [4, 10],    [5, 28.5] ]);
+let symbol5 = new SlotSymbol("symbol5", app.loader.resources["symbol5"].texture, [[],[],  [],         [3, 10],    [4, 22.5],  [5, 65] ]);
+let symbol6 = new SlotSymbol("symbol6", app.loader.resources["symbol6"].texture, [[],[],  [],         [3, 25],    [4, 50],    [5, 125] ]);
+let symbol7 = new SlotSymbol("symbol7", app.loader.resources["symbol7"].texture, [[],[],  [],         [],         [],         [5, 500] ]);
 
 function initalizeTextures(): void{
     symbol1.texture = app.loader.resources["symbol1"].texture;
@@ -51,7 +48,7 @@ function initalizeTextures(): void{
 
 const symbolChances = { //Chances = number of each symbol in draw
     symbols:    [symbol1,    symbol2,    symbol3,    symbol4,    symbol5,    symbol6,    symbol7],
-    chances:    [200,        150,        150,        100,        90,         60,         50     ],
+    chances:    [250,        250,        205,        125,        80,         67,         33    ],
 
     numberToSymbol(nr: number){
         let temp: number = 1;
@@ -66,19 +63,52 @@ const symbolChances = { //Chances = number of each symbol in draw
     }
 }
 
+function RTPcalc(nrSpins: number){
+    let spins: number = 0;
+    let hw: number = 0;
+    let highestWin: string = "";
+    let balance: number = 1000000;
+    let bet: number = 10;
+    for(let i = 1; i <= nrSpins; i++){
+        if(i % (nrSpins / 100) == 0){
+            console.clear();
+            console.log(`${(i / nrSpins * 100).toFixed(2)}%`);
+        }
+        let temp = new Spin(bet, false);
+        balance = balance - bet;
+        if(temp.totalWin > hw){
+            highestWin = `Highest win was ${temp.totalWin / bet}x at spin number ${i}.`
+            hw = temp.totalWin;
+        }
+        if(temp.totalWin > 0){
+            balance = balance + temp.totalWin;
+        }
+        spins++;
+    }
+    console.log(`Done ${spins} spins with bet ${bet}. \n${highestWin} \nBalance at end is ${balance}.\nThat means RTP is ${balance/10000}%`)
+}
 
 class Spin{
     spinResult: SlotSymbol[][] = []; //Symbols put in two dimensional array, so its easier to read slot-like [row][reel]
     winningLines: number[] = []; //Index of winning line in array from slot.paylines. First index(0) = first line
     bet: number = 0;
     totalWin: number = 0;
+    symbolsOnWinning: number[] = [];
 
     constructor(b: number, logs?: boolean){
         this.bet = b;
         this.spinResult = this.drawSymbols(),
-        this.checkLines()
+        this.checkLines();
+        this.winCalc();
         if(logs){
             this.logs();
+        }
+    }
+
+    winCalc(){
+        for(let i of this.winningLines){
+            if(i > 0)
+                this.totalWin += i;
         }
     }
 
@@ -113,6 +143,7 @@ class Spin{
         let noWilds = line.filter(item => item != symbol7)
         if(noWilds.length == 0){
             this.winningLines[paylineNumber] = this.bet * symbol7.payouts[5][1];
+            this.symbolsOnWinning[paylineNumber] = 5;
         }else{
             let result: SlotSymbol[] = [];
             for(let el of line){
@@ -124,8 +155,10 @@ class Spin{
             }
             if(noWilds[0] == symbol1 && result.length >= 2){
                 this.winningLines[paylineNumber] = this.bet * symbol1.payouts[result.length][1];
+                this.symbolsOnWinning[paylineNumber] = result.length;
             }else if(result.length >= 3){
                 this.winningLines[paylineNumber] = this.bet * noWilds[0].payouts[result.length][1];
+                this.symbolsOnWinning[paylineNumber] = result.length;
             }
         }
     }

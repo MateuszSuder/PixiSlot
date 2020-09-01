@@ -106,12 +106,12 @@ var Spin = /** @class */ (function () {
             result[ro] = [];
             for (var re = 0; re < slot.reels; re++) {
                 var temp = randomInt(1, symbolsAmount);
-                var res = symbolChances.numberToSymbol(temp);
-                if (res != undefined) {
-                    result[ro][re] = res;
+                var res_1 = symbolChances.numberToSymbol(temp);
+                if (res_1 != undefined) {
+                    result[ro][re] = res_1;
                 }
                 else {
-                    throw new Error("Error drawing value res (" + res + ") is undefined");
+                    throw new Error("Error drawing value res (" + res_1 + ") is undefined");
                 }
             }
         }

@@ -31,10 +31,22 @@ var States;
 })(States || (States = {}));
 // Creating Pixi app
 var app = new PIXI.Application({
-    backgroundColor: 0x1099bb
+    height: window.innerHeight,
+    width: window.innerWidth,
+    backgroundColor: 0x1099bb,
+    antialias: false
 });
+PIXI.settings.PRECISION_FRAGMENT = PIXI.PRECISION.HIGH;
+PIXI.settings.ROUND_PIXELS = true;
+PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.LINEAR;
 document.body.appendChild(app.view);
-app.loader.baseUrl = 'src/img/';
+if (window.devicePixelRatio > 1.5) {
+    console.log("Pixel ratio - " + window.devicePixelRatio);
+    app.loader.baseUrl = 'src/img/100px';
+}
+else {
+    app.loader.baseUrl = 'src/img/300px';
+}
 // Loading textures
 app.loader
     .add('symbol1', 'cherry.png')
@@ -47,7 +59,6 @@ app.loader
     .add('back', 'symbolBack.png')
     .add('columns', 'columns.png')
     .add('spinBttn', 'spinBttn.png')
-    .add('test', 'test.png')
     .add('plus', 'plus.png')
     .add('minus', 'minus.png')
     .add('satchel', 'satchel.png');
@@ -66,10 +77,10 @@ function doneLoading() {
     // Creating new spin
     var s = new Spin(10, false);
     // Helpful variables
-    var reel_width = document.body.clientWidth / 3;
-    var reelHeight;
-    var startingX;
-    var symbolWidth = document.body.clientHeight / 3;
+    var reelHeight = 0;
+    var startingX = 0;
+    var startingY = 0;
+    var symbolWidth = 0;
     var speed = 70; // Speed of spin
     var blur = new PIXI.filters.BlurFilter; // New filter - blur
     blur.blurY = speed / 4;
@@ -80,13 +91,23 @@ function doneLoading() {
     // Creating menu
     var menu = new PIXI.Graphics();
     menu.beginFill(0x000000);
-    menu.drawRect(0, document.body.clientHeight - document.body.clientHeight / 4, document.body.clientWidth, document.body.clientHeight / 4);
+    if (window.innerWidth > window.innerHeight) {
+        menu.drawRect(0, document.body.clientHeight - document.body.clientHeight / 4, document.body.clientWidth, document.body.clientHeight / 4);
+    }
+    else {
+        menu.drawRect(0, document.body.clientHeight - document.body.clientHeight / 6, document.body.clientWidth, document.body.clientHeight / 6);
+    }
     menu.alpha = 0.8;
     menu.endFill();
     // Creating button from texture
     var bttn = PIXI.Sprite.from(app.loader.resources['spinBttn'].texture);
     bttn.anchor.set(0.5, 0.5);
-    bttn.width = bttn.height = menu.height * 3 / 5;
+    if (window.innerWidth > window.innerHeight) {
+        bttn.width = bttn.height = menu.height * 3 / 5;
+    }
+    else {
+        bttn.width = bttn.height = menu.height * 3 / 5;
+    }
     bttn.position.x = document.body.clientWidth / 2;
     bttn.position.y = menu.getBounds().y + menu.getBounds().height / 2;
     bttn.interactive = true;
@@ -94,32 +115,34 @@ function doneLoading() {
     var bet = new PIXI.Text('10', {
         fontFamily: 'Monoscape',
         fill: [0xffe000, 0xbfa800],
-        fontSize: menu.width / 17,
+        fontSize: menu.height / 4,
         dropShadow: true,
         dropShadowBlur: 7,
         strokeThickness: 1
     });
+    bet.resolution = 1;
     // Creating additional bar for balance
     var bar = new PIXI.Graphics();
     bar.beginFill(0x000000);
-    bar.drawRect(0, document.body.clientHeight - menu.height / 10, document.body.clientWidth, menu.height / 12);
+    bar.drawRect(0, document.body.clientHeight - menu.height / 6, document.body.clientWidth, menu.height / 6);
     bar.endFill();
     // Creating balance label
     var balanceLabel = new PIXI.Text('Balance: ', {
         fontFamily: 'Monoscape',
         fill: [0xffffff, 0xd8d8d8],
-        fontSize: bar.height
+        fontSize: bar.height * 2 / 3
     });
-    balanceLabel.anchor.set(0, 0.5);
-    balanceLabel.position.y = document.body.clientHeight - bar.height - balanceLabel.getBounds().top / 2;
+    balanceLabel.anchor.set(0.5, 0.5);
+    balanceLabel.position.x = bar.width / 2 - balanceLabel.width / 2;
+    balanceLabel.position.y = bar.getBounds().top + balanceLabel.height / 2;
     var balance = new PIXI.Text('10,000.00', {
         fontFamily: 'Monoscape',
         fill: [0xffffff, 0xd8d8d8],
-        fontSize: bar.height
+        fontSize: bar.height * 2 / 3
     });
     balance.position.x = balanceLabel.getBounds().right;
     balance.anchor.set(0, 0.5);
-    balance.position.y = document.body.clientHeight - bar.height - balance.getBounds().top / 2;
+    balance.position.y = bar.getBounds().top + balanceLabel.height / 2;
     // Win label
     var winLabel = new PIXI.Text('Win', {
         fontFamily: 'Monoscape',
@@ -142,7 +165,8 @@ function doneLoading() {
     var winInfo = new PIXI.Text('', {
         fontFamily: 'Monoscape',
         fill: [0xffffff, 0xd8d8d8],
-        fontSize: menu.height / 10
+        fontSize: menu.height / 10,
+        strokeThickness: 2
     });
     winInfo.anchor.set(0.5, 0.5);
     winInfo.position.x = bttn.getBounds().x + bttn.width / 2;
@@ -160,9 +184,18 @@ function doneLoading() {
     bet.position.y = betY;
     plus.position.y = betY + plus.width / 2;
     minus.position.y = betY + minus.width / 2;
-    minus.position.x = document.body.clientWidth / 6;
-    bet.position.x = minus.position.x + minus.width * 2;
-    plus.position.x = bet.position.x + bet.width + plus.width;
+    if (window.innerWidth > window.innerHeight) {
+        minus.position.x = document.body.clientWidth / 6;
+        bet.position.x = minus.position.x + minus.width * 2;
+        plus.position.x = bet.position.x + bet.width + plus.width;
+    }
+    else {
+        minus.position.x = 0 + minus.width;
+        bet.position.x = minus.position.x + minus.width + minus.width / 2;
+        plus.position.x = bet.position.x + bet.width + plus.width / 2;
+    }
+    var bottom = new PIXI.Container();
+    bottom.addChild(menu, bttn, bet, bar, balanceLabel, balance, winLabel, win, winInfo, plus, minus);
     // Function to change balance
     function changeBalance(changeBy) {
         bal = bal + changeBy;
@@ -226,6 +259,20 @@ function doneLoading() {
         }
         else if (state == States.spinning) {
             state = States.stopping;
+        }
+        else if (state == States.resultDone) {
+            bttn.texture = app.loader.resources['spinBttn'].texture;
+            if (tWin > 0)
+                changeBalance(tWin);
+            win.text = "";
+            winInfo.text = "";
+            reels.forEach(function (reel) {
+                reel.children.forEach(function (ch) {
+                    ch.filters = [];
+                });
+            });
+            showLines.stop();
+            state = States.idle;
         }
     });
     plus.on('mousedown', function (e) {
@@ -297,15 +344,27 @@ function doneLoading() {
     var reels = [reel1, reel2, reel3, reel4, reel5]; // Putting containers together
     var backReels = new PIXI.Container(); // Container containing sprites for reel backgrounds
     // Setting variables
-    reelHeight = document.body.clientHeight - menu.getBounds().height;
-    symbolWidth = reelHeight / 3;
-    startingX = document.body.clientWidth / 2 - symbolWidth * 5 / 2;
+    if (window.innerWidth > window.innerHeight) {
+        reelHeight = document.body.clientHeight - menu.getBounds().height;
+        symbolWidth = reelHeight / 3;
+        startingX = document.body.clientWidth / 2 - symbolWidth * 5 / 2;
+    }
+    else {
+        symbolWidth = document.body.clientWidth / 5;
+        reelHeight = symbolWidth * 3;
+        startingY = document.body.clientHeight / 2 - reelHeight;
+    }
     // Adding sprites for reels backgrounds
     for (var i = 0; i < 3; i++) {
         for (var j = 0; j < 5; j++) {
             var sprite = PIXI.Sprite.from(app.loader.resources['back'].texture);
             sprite.height = sprite.width = symbolWidth;
-            sprite.position.y = symbolWidth * (i);
+            if (window.innerWidth > window.innerHeight) {
+                sprite.position.y = symbolWidth * (i);
+            }
+            else {
+                sprite.position.y = startingY + symbolWidth * (i);
+            }
             sprite.position.x = startingX + symbolWidth * (j);
             backReels.addChild(sprite);
         }
@@ -315,37 +374,58 @@ function doneLoading() {
         // Mask
         var mask = new PIXI.Graphics();
         mask.beginFill(0xFF3300);
-        mask.drawRect(startingX + (i + 1) * symbolWidth, 0, symbolWidth, reelHeight);
+        if (window.innerWidth > window.innerHeight) {
+            mask.drawRect(startingX + (i + 1) * symbolWidth, 0, symbolWidth, reelHeight);
+        }
+        else {
+            mask.drawRect(startingX + (i + 1) * symbolWidth, startingY, symbolWidth, reelHeight);
+        }
         mask.endFill();
         for (var j in reels) {
             if (i == -1 || i == 3) {
                 var sprite = PIXI.Sprite.from(symbolChances.symbols[randomInt(0, 6)].texture);
                 sprite.height = sprite.width = symbolWidth;
-                sprite.position.y = symbolWidth * (i);
+                if (window.innerWidth > window.innerHeight) {
+                    sprite.position.y = symbolWidth * (i);
+                }
+                else {
+                    sprite.position.y = startingY + symbolWidth * (i);
+                }
                 reels[j].addChild(sprite);
             }
             else {
                 var sprite = PIXI.Sprite.from(s.spinResult[i][j].texture);
                 sprite.height = sprite.width = symbolWidth;
-                sprite.position.y = symbolWidth * (i);
+                if (window.innerWidth > window.innerHeight) {
+                    sprite.position.y = symbolWidth * (i);
+                }
+                else {
+                    sprite.position.y = startingY + symbolWidth * (i);
+                }
                 reels[j].addChild(sprite);
             }
         }
         reels[i + 1].mask = mask;
     }
+    // Adding columns
+    var columns = PIXI.Sprite.from(app.loader.resources['columns'].texture);
+    columns.height = reelHeight;
+    columns.width = symbolWidth * 5;
+    columns.position.x = startingX;
+    if (window.innerHeight > window.innerWidth) {
+        columns.position.y = startingY;
+    }
+    // Putting all together
+    var slotCont = new PIXI.Container();
     // Setting positions of reels
     reel1.position.x = startingX;
     reel2.position.x = startingX + symbolWidth;
     reel3.position.x = startingX + symbolWidth * 2;
     reel4.position.x = startingX + symbolWidth * 3;
     reel5.position.x = startingX + symbolWidth * 4;
-    // Adding columns
-    var columns = PIXI.Sprite.from(app.loader.resources['columns'].texture);
-    columns.height = reelHeight;
-    columns.width = symbolWidth * 5;
-    columns.position.x = startingX;
+    slotCont.addChild(backReels, reel1, reel2, reel3, reel4, reel5, columns);
     // Adding containers to stage
-    app.stage.addChild(backReels, reel1, reel2, reel3, reel4, reel5, columns, menu, bttn, bet, plus, minus, bar, balanceLabel, balance, winLabel, win, winInfo);
+    app.stage.addChild(slotCont, bottom);
     // Show results function
     function showResults(result) {
         showLines = new PIXI.Ticker();
@@ -474,7 +554,12 @@ function doneLoading() {
         // Function to fix position of symbols
         function fixPosition() {
             for (var p = 0; p < reel.children.length; p++) {
-                reel.children[p].position.y = symbolWidth * (p - 1);
+                if (window.innerWidth > window.innerHeight) {
+                    reel.children[p].position.y = symbolWidth * (p - 1);
+                }
+                else {
+                    reel.children[p].position.y = startingY + symbolWidth * (p - 1);
+                }
             }
         }
         ticker.start(); //Starting ticker...
@@ -528,6 +613,7 @@ function doneLoading() {
         });
     }
 }
+var res = [window.innerWidth, window.innerHeight];
 // On resize
 function resize() {
     app.renderer.resize(window.innerWidth, window.innerHeight);

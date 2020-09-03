@@ -1,4 +1,8 @@
-const slot = {
+import * as PIXI from 'pixi.js'
+import {randomInt} from './functions'
+import { app } from './main'
+
+export const slot = {
     reels: 5,
     rows: 3,
     //0 - 0 - 0 - 0 - 0
@@ -36,7 +40,7 @@ let symbol5 = new SlotSymbol("symbol5", app.loader.resources["symbol5"].texture,
 let symbol6 = new SlotSymbol("symbol6", app.loader.resources["symbol6"].texture, [[],[],  [],         [3, 25],    [4, 50],    [5, 125] ]);
 let symbol7 = new SlotSymbol("symbol7", app.loader.resources["symbol7"].texture, [[],[],  [],         [],         [],         [5, 500] ]);
 
-function initalizeTextures(): void{
+export function initalizeTextures(): void{
     symbol1.texture = app.loader.resources["symbol1"].texture;
     symbol2.texture = app.loader.resources["symbol2"].texture;
     symbol3.texture = app.loader.resources["symbol3"].texture;
@@ -46,7 +50,7 @@ function initalizeTextures(): void{
     symbol7.texture = app.loader.resources["symbol7"].texture;
 }
 
-const symbolChances = { //Chances = number of each symbol in draw
+export const symbolChances = { //Chances = number of each symbol in draw
     symbols:    [symbol1,    symbol2,    symbol3,    symbol4,    symbol5,    symbol6,    symbol7],
     chances:    [250,        250,        205,        125,        80,         67,         33    ],
 
@@ -88,7 +92,7 @@ function RTPcalc(nrSpins: number){
     console.log(`Done ${spins} spins with bet ${bet}. \n${highestWin} \nBalance at end is ${balance}.\nThat means RTP is ${balance/10000}%`)
 }
 
-class Spin{
+export class Spin{
     spinResult: SlotSymbol[][] = []; //Symbols put in two dimensional array, so its easier to read slot-like [row][reel]
     winningLines: number[] = []; //Index of winning line in array from slot.paylines. First index(0) = first line
     bet: number = 0;

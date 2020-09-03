@@ -1,4 +1,3 @@
-"use strict";
 var __spreadArrays = (this && this.__spreadArrays) || function () {
     for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
     for (var r = Array(s), k = 0, i = 0; i < il; i++)
@@ -6,6 +5,9 @@ var __spreadArrays = (this && this.__spreadArrays) || function () {
             r[k] = a[j];
     return r;
 };
+import * as PIXI from 'pixi.js';
+import { initalizeTextures, Spin, symbolChances, slot } from './spinCalc';
+import { randomInt } from './functions';
 var sp;
 var stake = 10;
 var bal = 10000.00;
@@ -30,7 +32,7 @@ var States;
     States[States["stopping"] = 4] = "stopping";
 })(States || (States = {}));
 // Creating Pixi app
-var app = new PIXI.Application({
+export var app = new PIXI.Application({
     height: window.innerHeight,
     width: window.innerWidth,
     backgroundColor: 0x1099bb,

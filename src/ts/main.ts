@@ -1,3 +1,7 @@
+import * as PIXI from 'pixi.js'
+import {initalizeTextures, Spin, symbolChances, slot} from './spinCalc'
+import {randomInt} from './functions'
+
 
 let sp: Spin;
 let stake: number = 10;
@@ -24,7 +28,7 @@ enum States { // States of spin
 }
 
 // Creating Pixi app
-const app = new PIXI.Application({ 
+export const app = new PIXI.Application({ 
   height: window.innerHeight,
   width: window.innerWidth,
   backgroundColor: 0x1099bb,

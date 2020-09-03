@@ -1,5 +1,6 @@
-"use strict";
-var slot = {
+import { randomInt } from './functions';
+import { app } from './main';
+export var slot = {
     reels: 5,
     rows: 3,
     //0 - 0 - 0 - 0 - 0
@@ -30,7 +31,7 @@ var symbol4 = new SlotSymbol("symbol4", app.loader.resources["symbol4"].texture,
 var symbol5 = new SlotSymbol("symbol5", app.loader.resources["symbol5"].texture, [[], [], [], [3, 10], [4, 22.5], [5, 65]]);
 var symbol6 = new SlotSymbol("symbol6", app.loader.resources["symbol6"].texture, [[], [], [], [3, 25], [4, 50], [5, 125]]);
 var symbol7 = new SlotSymbol("symbol7", app.loader.resources["symbol7"].texture, [[], [], [], [], [], [5, 500]]);
-function initalizeTextures() {
+export function initalizeTextures() {
     symbol1.texture = app.loader.resources["symbol1"].texture;
     symbol2.texture = app.loader.resources["symbol2"].texture;
     symbol3.texture = app.loader.resources["symbol3"].texture;
@@ -39,7 +40,7 @@ function initalizeTextures() {
     symbol6.texture = app.loader.resources["symbol6"].texture;
     symbol7.texture = app.loader.resources["symbol7"].texture;
 }
-var symbolChances = {
+export var symbolChances = {
     symbols: [symbol1, symbol2, symbol3, symbol4, symbol5, symbol6, symbol7],
     chances: [250, 250, 205, 125, 80, 67, 33],
     numberToSymbol: function (nr) {
@@ -167,6 +168,7 @@ var Spin = /** @class */ (function () {
     };
     return Spin;
 }());
+export { Spin };
 function countSymbols() {
     var r = 0;
     for (var i = 0; i < symbolChances.chances.length; i++) {

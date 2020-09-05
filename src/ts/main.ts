@@ -1,4 +1,4 @@
-import * as PIXI from 'pixi.js'
+import * as PIXI from 'pixi.js-legacy'
 import {initalizeTextures, Spin, symbolChances, slot} from './spinCalc'
 import {randomInt} from './functions'
 
@@ -32,8 +32,10 @@ export const app = new PIXI.Application({
   height: window.innerHeight,
   width: window.innerWidth,
   backgroundColor: 0x1099bb,
+  transparent: false,
   antialias: false
 });
+
 PIXI.settings.PRECISION_FRAGMENT = PIXI.PRECISION.HIGH;
 PIXI.settings.ROUND_PIXELS = true;
 PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.LINEAR;

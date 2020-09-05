@@ -5,7 +5,7 @@ var __spreadArrays = (this && this.__spreadArrays) || function () {
             r[k] = a[j];
     return r;
 };
-import * as PIXI from 'pixi.js';
+import * as PIXI from 'pixi.js-legacy';
 import { initalizeTextures, Spin, symbolChances, slot } from './spinCalc';
 import { randomInt } from './functions';
 var sp;
@@ -36,6 +36,7 @@ export var app = new PIXI.Application({
     height: window.innerHeight,
     width: window.innerWidth,
     backgroundColor: 0x1099bb,
+    transparent: false,
     antialias: false
 });
 PIXI.settings.PRECISION_FRAGMENT = PIXI.PRECISION.HIGH;

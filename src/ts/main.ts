@@ -2,7 +2,7 @@ import * as PIXI from 'pixi.js-legacy'
 import {initalizeTextures, Spin, symbolChances, slot} from './spinCalc'
 import {randomInt} from './functions'
 
-
+let spritesNow: PIXI.Sprite[][] = [];  
 let sp: Spin;
 let stake: number = 10;
 let bal: number = 10000.00;
@@ -408,6 +408,7 @@ function doneLoading(){
 
   // Showing spin result and adding symbols at top and bottom
   for(let i = -1; i < 4; i++){
+    spritesNow[i+1] = []
     // Mask
     let mask = new PIXI.Graphics();
     mask.beginFill(0xFF3300);
@@ -427,7 +428,7 @@ function doneLoading(){
         }else{
           sprite.position.y = startingY + symbolWidth * (i);
         }
-        
+        spritesNow[i+1][j] = sprite;
         reels[j].addChild(sprite);
         
       }else{
@@ -438,7 +439,7 @@ function doneLoading(){
         }else{
           sprite.position.y = startingY + symbolWidth * (i);
         }
-
+        spritesNow[i+1][j] = sprite;
         reels[j].addChild(sprite);
       }
     }
@@ -579,6 +580,7 @@ function doneLoading(){
   }
 
   function animateReel(reel: PIXI.Container, reelNumber: number, res: Spin){
+    
     let it: number = 1; // Iteration
     if(state == States.spinning){
       it = 1;
@@ -589,7 +591,7 @@ function doneLoading(){
 
     let spinDone: boolean = false;
 
-    let addNext = Math.floor(symbolWidth / speed); //When to add next symbol
+    let addNext = Math.round(symbolWidth / speed); //When to add next symbol
 
     let ticker = new PIXI.Ticker; //Ticker
     let sR = [...res.spinResult]; //Copy of array from Spin object
@@ -606,12 +608,7 @@ function doneLoading(){
       for(let m = reel.children.length-1; m <= 0; m--){ // Fixing indexes (making space at index 0)
         reel.setChildIndex(reel.children[m], m+1)
       }
-      if(window.innerWidth > window.innerHeight){
-        reel.addChildAt(sprite, 0).position.y = 0 - symbolWidth; // Adding child (sprite) at index 0
-      }else{
-        reel.addChildAt(sprite, 0).position.y = startingY - symbolWidth; // Adding child (sprite) at index 0
-      }
-      
+      reel.addChildAt(sprite, 0).position.y = 0 - symbolWidth; // Adding child (sprite) at index 0
     }
 
     // Function to fix position of symbols
